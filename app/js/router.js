@@ -1,5 +1,3 @@
-import WPApi from '../integrations/wp/api.js';
-
 const router = VueRouter.createRouter({
     history: VueRouter.createWebHashHistory(),
     routes: [
@@ -34,18 +32,9 @@ const router = VueRouter.createRouter({
                 },
                 async mounted() {
                     try {
-                        // Verificar autenticación
+                        // Verificar autenticación usando WPApi global
                         this.authStatus = await WPApi.auth.checkAuth();
-                        
-                        if(this.authStatus.isAuthenticated) {
-                            // Si está autenticado, obtener datos del usuario
-                            this.user = await WPApi.users.getCurrent();
-                            
-                            // Obtener posts
-                            this.posts = await WPApi.posts.getAll();
-                        } else {
-                            this.status = 'Usuario no autenticado';
-                        }
+                        console.log('Auth status:', this.authStatus);
                     } catch (error) {
                         console.error('Error:', error);
                         this.status = 'Error de conexión';
@@ -56,6 +45,4 @@ const router = VueRouter.createRouter({
             }
         }
     ]
-})
-
-export default router;
+});
