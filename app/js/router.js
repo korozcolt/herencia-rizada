@@ -1,4 +1,5 @@
-// app/js/router.js
+import WPApi from '../integrations/wp/api.js';
+
 const router = VueRouter.createRouter({
     history: VueRouter.createWebHashHistory(),
     routes: [
@@ -9,7 +10,13 @@ const router = VueRouter.createRouter({
                     <div class="app-container">
                         <div v-if="loading">Cargando...</div>
                         <div v-else>
-                            {{ status }}
+                            <div v-if="authStatus.isAuthenticated">
+                                <div>Bienvenido: {{user.name}}</div>
+                                <div>Posts cargados: {{posts.length}}</div>
+                            </div>
+                            <div v-else>
+                                {{ status }}
+                            </div>
                         </div>
                     </div>
                 `,
@@ -17,26 +24,28 @@ const router = VueRouter.createRouter({
                     return {
                         loading: true,
                         status: '',
-                        wpBaseUrl: 'https://herenciarizada.com'
+                        authStatus: {
+                            isAuthenticated: false,
+                            user: null
+                        },
+                        user: null,
+                        posts: []
                     }
                 },
                 async mounted() {
                     try {
-                        const response = await fetch(`${this.wpBaseUrl}/wp-json/wp/v2/posts`, {
-                            headers: {
-                                'Authorization': 'Basic YW5hc29maWFvcm96Y286QW5hU29maWEyMDEzKw=='
-                            }
-                        });
+                        // Verificar autenticación
+                        this.authStatus = await WPApi.auth.checkAuth();
                         
-                        const data = await response.json();
-                        console.log('Response:', data);
-                        
-                        if(response.ok) {
-                            this.status = `Posts cargados: ${data.length}`;
+                        if(this.authStatus.isAuthenticated) {
+                            // Si está autenticado, obtener datos del usuario
+                            this.user = await WPApi.users.getCurrent();
+                            
+                            // Obtener posts
+                            this.posts = await WPApi.posts.getAll();
                         } else {
-                            this.status = `Error: ${data.message || 'Error desconocido'}`;
+                            this.status = 'Usuario no autenticado';
                         }
-                        
                     } catch (error) {
                         console.error('Error:', error);
                         this.status = 'Error de conexión';
@@ -48,3 +57,5 @@ const router = VueRouter.createRouter({
         }
     ]
 })
+
+export default router;
